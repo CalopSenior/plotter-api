@@ -1,36 +1,15 @@
 /**
- * ============================================================================
- * PlotterAPI v2.0 - Motor Matemático, Geometria Analítica e Renderização
- * ============================================================================
- * Biblioteca 100% nativa em JavaScript (Canvas API) para análise numérica,
- * álgebra linear, geometria 2D/3D e renderização de poliedros.
+ * PlotterAPI - Biblioteca COMPLETA para geração de gráficos, GA, álgebra linear e análise numérica.
+ * Versão 2.0.0 (Unificada)
  */
 const PlotterAPI = {
   // ==========================================
-  // 1. CONSTRUTORES DE GEOMETRIA ANALÍTICA 3D
+  // 1. CONSTRUTORES DE GEOMETRIA ANALÍTICA (GA)
   // ==========================================
 
-  /**
-   * Cria um ponto no espaço 3D.
-   * @param {number} x - Coordenada X.
-   * @param {number} y - Coordenada Y.
-   * @param {number} z - Coordenada Z.
-   * @returns {Object} Objeto do tipo 'point3D'.
-   */
   point3D(x, y, z) {
     return { type: "point3D", coords: [x, y, z] };
   },
-
-  /**
-   * Cria um vetor direcional 3D, com origem opcional.
-   * @param {number} dx - Componente X da direção.
-   * @param {number} dy - Componente Y da direção.
-   * @param {number} dz - Componente Z da direção.
-   * @param {number} [originX=0] - Origem X do vetor.
-   * @param {number} [originY=0] - Origem Y do vetor.
-   * @param {number} [originZ=0] - Origem Z do vetor.
-   * @returns {Object} Objeto do tipo 'vector3D'.
-   */
   vector3D(dx, dy, dz, originX = 0, originY = 0, originZ = 0) {
     return {
       type: "vector3D",
@@ -38,182 +17,26 @@ const PlotterAPI = {
       origin: [originX, originY, originZ],
     };
   },
-
-  /**
-   * Cria um objeto vetor nativo da API
-   */
-  vector(dimension, coords) {
-    return { type: "vector", dim: dimension, data: coords };
-  },
-
-  // ==========================================
-  // CAMPOS VETORIAIS (GERADORES)
-  // ==========================================
-
-  /**
-   * Gera um Campo Vetorial 3D a partir de funções de componentes (P, Q, R).
-   * @param {Function} fX - Função para a componente X: f(x, y, z)
-   * @param {Function} fY - Função para a componente Y: f(x, y, z)
-   * @param {Function} fZ - Função para a componente Z: f(x, y, z)
-   * @param {number[]} [range=[-5, 5]] - Intervalo cúbico de amostragem [min, max]
-   * @param {number} [step=2] - Espaçamento entre os vetores gerados
-   * @returns {Array} Array de objetos vector3D (pronto para ser passado ao scene3D)
-   */
-  vectorField3D(fX, fY, fZ, range = [-5, 5], step = 2) {
-    const vectors = [];
-    for (let x = range[0]; x <= range[1]; x += step) {
-      for (let y = range[0]; y <= range[1]; y += step) {
-        for (let z = range[0]; z <= range[1]; z += step) {
-          try {
-            const dx = fX(x, y, z);
-            const dy = fY(x, y, z);
-            const dz = fZ(x, y, z);
-
-            // Apenas cria o vetor se as funções retornarem números reais (evita divisões por zero)
-            if (isFinite(dx) && isFinite(dy) && isFinite(dz)) {
-              vectors.push(this.vector3D(dx, dy, dz, x, y, z));
-            }
-          } catch (e) {
-            // Ignora pontos de singularidade
-          }
-        }
-      }
-    }
-    return vectors;
-  },
-
-  /**
-   * Gera um Campo Vetorial 2D a partir de funções de componentes (P, Q).
-   * @param {Function} fX - Função para a componente X: f(x, y)
-   * @param {Function} fY - Função para a componente Y: f(x, y)
-   * @param {number[]} [rangeX=[-10, 10]] - Intervalo de amostragem X [min, max]
-   * @param {number[]} [rangeY=[-10, 10]] - Intervalo de amostragem Y [min, max]
-   * @param {number} [step=1] - Espaçamento entre os vetores gerados
-   * @returns {Array} Array de objetos vector (pronto para ser passado ao vectorialGraph2D)
-   */
-  vectorField2D(fX, fY, rangeX = [-10, 10], rangeY = [-10, 10], step = 1) {
-    const vectors = [];
-    for (let x = rangeX[0]; x <= rangeX[1]; x += step) {
-      for (let y = rangeY[0]; y <= rangeY[1]; y += step) {
-        try {
-          const dx = fX(x, y);
-          const dy = fY(x, y);
-
-          if (isFinite(dx) && isFinite(dy)) {
-            const v = this.vector(2, [dx, dy]);
-            v.origin = { x, y }; // Define o ponto de aplicação da seta
-            vectors.push(v);
-          }
-        } catch (e) {}
-      }
-    }
-    return vectors;
-  },
-
-  /**
-   * Renderiza a camada de vetores 2D.
-   * O fundo é transparente para permitir a sobreposição (mix-blend-mode) com a malha 2D principal.
-   */
-  vectorialGraph2D(vectors, options = {}) {
-    const {
-      width = 600,
-      height = 400,
-      color = "#3b82f6",
-      padding = 45,
-    } = options;
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-
-    // IMPORTANTE: Limpar com transparência em vez de fundo branco
-    ctx.clearRect(0, 0, width, height);
-
-    // Escala base (igual à do multiLineGraph2D)
-    const toPxX = (v) => padding + ((v + 10) / 20) * (width - 2 * padding);
-    const toPxY = (v) =>
-      height - padding - ((v + 10) / 20) * (height - 2 * padding);
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-
-    vectors.forEach((v) => {
-      const start = v.origin || { x: 0, y: 0 };
-      const end = { x: start.x + v.data[0], y: start.y + v.data[1] };
-
-      const x1 = toPxX(start.x);
-      const y1 = toPxY(start.y);
-      const x2 = toPxX(end.x);
-      const y2 = toPxY(end.y);
-
-      // Corpo do vetor (Reta)
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-
-      // Ponta da seta (Arrowhead)
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(
-        x2 - 8 * Math.cos(angle - 0.5),
-        y2 - 8 * Math.sin(angle - 0.5),
-      );
-      ctx.lineTo(
-        x2 - 8 * Math.cos(angle + 0.5),
-        y2 - 8 * Math.sin(angle + 0.5),
-      );
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    });
-
-    return canvas;
-  },
-
-  /**
-   * Cria uma reta 3D paramétrica.
-   * @param {number[]} p0 - Ponto inicial [x, y, z].
-   * @param {number[]} dir - Vetor diretor [dx, dy, dz].
-   * @returns {Object} Objeto do tipo 'line3D'.
-   */
   line3D(p0, dir) {
     return { type: "line3D", p0, dir };
   },
-
-  /**
-   * Cria um plano 3D a partir da equação geral: ax + by + cz + d = 0.
-   * @param {number} a - Coeficiente A.
-   * @param {number} b - Coeficiente B.
-   * @param {number} c - Coeficiente C.
-   * @param {number} d - Termo independente D.
-   * @returns {Object} Objeto do tipo 'plane3D'.
-   */
   plane3D(a, b, c, d) {
     return { type: "plane3D", eq: [a, b, c, d] };
+  },
+
+  /** Cria um objeto vetor 2D nativo */
+  vector(dimension, coords) {
+    return { type: "vector", dim: dimension, data: coords };
   },
 
   // ==========================================
   // 2. CONSTRUTORES DE SÓLIDOS (POLIEDROS)
   // ==========================================
 
-  /**
-   * Cria um poliedro genérico a partir de vértices e faces.
-   * @param {number[][]} vertices - Array de coordenadas [[x,y,z], ...].
-   * @param {number[][]} faces - Array de índices ligando os vértices [[0,1,2], ...].
-   * @returns {Object} Objeto do tipo 'polyhedron'.
-   */
   polyhedron(vertices, faces) {
     return { type: "polyhedron", vertices, faces };
   },
 
-  /**
-   * Cria um cubo paramétrico.
-   * @param {number} [size=2] - Tamanho da aresta.
-   * @param {number[]} [center=[0,0,0]] - Centro do cubo [x,y,z].
-   * @returns {Object} Objeto do tipo 'polyhedron'.
-   */
   cube(size = 2, center = [0, 0, 0]) {
     const s = size / 2,
       [cx, cy, cz] = center;
@@ -238,13 +61,6 @@ const PlotterAPI = {
     return { type: "polyhedron", vertices: v, faces: f };
   },
 
-  /**
-   * Cria uma esfera poligonal.
-   * @param {number} [radius=1] - Raio da esfera.
-   * @param {number[]} [center=[0,0,0]] - Centro da esfera [x,y,z].
-   * @param {number} [segments=16] - Resolução da malha.
-   * @returns {Object} Objeto do tipo 'polyhedron'.
-   */
   sphere(radius = 1, center = [0, 0, 0], segments = 16) {
     const vertices = [],
       faces = [];
@@ -263,8 +79,8 @@ const PlotterAPI = {
     for (let i = 0; i < segments; i++) {
       for (let j = 0; j < segments; j++) {
         const p1 = i * (segments + 1) + j,
-          p2 = p1 + 1;
-        const p3 = (i + 1) * (segments + 1) + j + 1,
+          p2 = p1 + 1,
+          p3 = (i + 1) * (segments + 1) + j + 1,
           p4 = (i + 1) * (segments + 1) + j;
         faces.push([p1, p2, p3, p4]);
       }
@@ -272,14 +88,6 @@ const PlotterAPI = {
     return { type: "polyhedron", vertices, faces };
   },
 
-  /**
-   * Cria um cilindro sólido.
-   * @param {number} [radius=1] - Raio da base.
-   * @param {number} [height=2] - Altura do cilindro.
-   * @param {number[]} [center=[0,0,0]] - Centro do cilindro [x,y,z].
-   * @param {number} [segments=16] - Resolução da malha lateral.
-   * @returns {Object} Objeto do tipo 'polyhedron'.
-   */
   cylinder(radius = 1, height = 2, center = [0, 0, 0], segments = 16) {
     const vertices = [],
       faces = [];
@@ -297,8 +105,8 @@ const PlotterAPI = {
     }
     for (let i = 0; i < segments; i++) {
       const t1 = offset + i * 2,
-        b1 = offset + i * 2 + 1;
-      const t2 = offset + (i + 1) * 2,
+        b1 = offset + i * 2 + 1,
+        t2 = offset + (i + 1) * 2,
         b2 = offset + (i + 1) * 2 + 1;
       faces.push([t1, b1, b2, t2]);
       faces.push([0, t1, t2]);
@@ -307,14 +115,6 @@ const PlotterAPI = {
     return { type: "polyhedron", vertices, faces };
   },
 
-  /**
-   * Cria um cone sólido.
-   * @param {number} [radius=1] - Raio da base.
-   * @param {number} [height=2] - Altura do cone.
-   * @param {number[]} [center=[0,0,0]] - Centro do cone [x,y,z].
-   * @param {number} [segments=16] - Resolução da malha.
-   * @returns {Object} Objeto do tipo 'polyhedron'.
-   */
   cone(radius = 1, height = 2, center = [0, 0, 0], segments = 16) {
     const vertices = [],
       faces = [];
@@ -341,15 +141,9 @@ const PlotterAPI = {
   },
 
   // ==========================================
-  // 3. OPERAÇÕES AVANÇADAS 3D (CORTES E PROJEÇÕES)
+  // 3. CORTES E PROJEÇÕES
   // ==========================================
 
-  /**
-   * Projeta ortogonalmente um objeto 3D num plano.
-   * @param {Object} obj - Objeto GA a ser projetado (point, line, vector, polyhedron).
-   * @param {Object} plane - Plano de destino (plane3D).
-   * @returns {Object} Novo objeto GA esmagado no plano.
-   */
   projectToPlane(obj, plane) {
     const [a, b, c, d] = plane.eq;
     const denom = a * a + b * b + c * c;
@@ -386,20 +180,11 @@ const PlotterAPI = {
         dir: [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]],
       };
     }
-    if (obj.type === "polyhedron") {
+    if (obj.type === "polyhedron")
       return { ...obj, vertices: obj.vertices.map((v) => projPoint(v)) };
-    }
     return obj;
   },
 
-  /**
-   * Interseção entre uma superfície f(x,z) e um plano.
-   * @param {Function} func - Função da superfície y = f(x,z).
-   * @param {number[]} planeEq - Equação do plano [a, b, c, d].
-   * @param {number[]} [range=[-5,5]] - Limites de procura.
-   * @param {number} [step=0.2] - Resolução da procura.
-   * @returns {Object} Objeto do tipo 'segments3D' contendo a curva de corte.
-   */
   intersectSurfacePlane(func, planeEq, range = [-5, 5], step = 0.2) {
     const [a, b, c, d] = planeEq,
       segments = [];
@@ -433,12 +218,6 @@ const PlotterAPI = {
     return { type: "segments3D", segments };
   },
 
-  /**
-   * Interseção entre um poliedro (malha) e um plano.
-   * @param {Object} poly - Objeto do tipo 'polyhedron'.
-   * @param {Object} plane - Objeto do tipo 'plane3D'.
-   * @returns {Object} Objeto do tipo 'segments3D' contendo as arestas cortadas.
-   */
   intersectPolyhedronPlane(poly, plane) {
     const [a, b, c, d] = plane.eq;
     const dist = (v) => a * v[0] + b * v[1] + c * v[2] + d;
@@ -466,15 +245,465 @@ const PlotterAPI = {
   },
 
   // ==========================================
-  // 4. MOTORES DE RENDERIZAÇÃO
+  // 4. ÁLGEBRA LINEAR E MATRIZES
   // ==========================================
 
-  /**
-   * Renderizador Unificado 3D. Desenha sólidos, superfícies e geometria num espaço tridimensional.
-   * @param {Array<Object>} objects - Lista de objetos a renderizar.
-   * @param {Object} options - Configurações (width, height, scale, interactive, showAxes).
-   * @returns {HTMLCanvasElement} Elemento Canvas renderizado.
-   */
+  matrix(data) {
+    if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
+      throw new Error(
+        "Formato inválido. A matriz deve ser um array 2D, ex: [[1, 2], [3, 4]]",
+      );
+    }
+    return {
+      type: "matrix",
+      data: data,
+      rows: data.length,
+      cols: data[0].length,
+    };
+  },
+
+  matrixAdd(m1, m2) {
+    if (m1.rows !== m2.rows || m1.cols !== m2.cols)
+      throw new Error("Dimensões incompatíveis para adição.");
+    return this.matrix(
+      m1.data.map((row, i) => row.map((val, j) => val + m2.data[i][j])),
+    );
+  },
+
+  matrixSub(m1, m2) {
+    if (m1.rows !== m2.rows || m1.cols !== m2.cols)
+      throw new Error("Dimensões incompatíveis para subtração.");
+    return this.matrix(
+      m1.data.map((row, i) => row.map((val, j) => val - m2.data[i][j])),
+    );
+  },
+
+  matrixMult(m1, m2) {
+    if (m1.cols !== m2.rows)
+      throw new Error("Dimensões incompatíveis para multiplicação.");
+    const result = Array(m1.rows)
+      .fill(0)
+      .map(() => Array(m2.cols).fill(0));
+    for (let i = 0; i < m1.rows; i++) {
+      for (let j = 0; j < m2.cols; j++) {
+        for (let k = 0; k < m1.cols; k++) {
+          result[i][j] += m1.data[i][k] * m2.data[k][j];
+        }
+      }
+    }
+    return this.matrix(result);
+  },
+
+  matrixTranspose(m) {
+    const result = Array(m.cols)
+      .fill(0)
+      .map(() => Array(m.rows).fill(0));
+    for (let i = 0; i < m.rows; i++) {
+      for (let j = 0; j < m.cols; j++) result[j][i] = m.data[i][j];
+    }
+    return this.matrix(result);
+  },
+
+  matrixDet(m) {
+    if (m.rows !== m.cols) throw new Error("A matriz deve ser quadrada.");
+    const calcDet = (mat) => {
+      if (mat.length === 1) return mat[0][0];
+      if (mat.length === 2)
+        return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
+      let det = 0;
+      for (let i = 0; i < mat.length; i++) {
+        const minor = mat.slice(1).map((row) => row.filter((_, j) => j !== i));
+        det += (i % 2 === 0 ? 1 : -1) * mat[0][i] * calcDet(minor);
+      }
+      return det;
+    };
+    return calcDet(m.data);
+  },
+
+  matrixInverse(m) {
+    const det = this.matrixDet(m);
+    if (Math.abs(det) < 1e-10)
+      throw new Error("Matriz singular. Não possui inversa.");
+    const n = m.rows;
+    if (n === 1) return this.matrix([[1 / m.data[0][0]]]);
+    const adjugate = Array(n)
+      .fill(0)
+      .map(() => Array(n).fill(0));
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const minorData = m.data
+          .filter((_, r) => r !== i)
+          .map((row) => row.filter((_, c) => c !== j));
+        adjugate[j][i] =
+          (((i + j) % 2 === 0 ? 1 : -1) *
+            this.matrixDet(this.matrix(minorData))) /
+          det;
+      }
+    }
+    return this.matrix(adjugate);
+  },
+
+  // ==========================================
+  // 5. CÁLCULO NUMÉRICO E CAMPOS VETORIAIS
+  // ==========================================
+
+  vectorField3D(fX, fY, fZ, range = [-5, 5], step = 2) {
+    const vectors = [];
+    for (let x = range[0]; x <= range[1]; x += step) {
+      for (let y = range[0]; y <= range[1]; y += step) {
+        for (let z = range[0]; z <= range[1]; z += step) {
+          try {
+            const dx = fX(x, y, z),
+              dy = fY(x, y, z),
+              dz = fZ(x, y, z);
+            if (isFinite(dx) && isFinite(dy) && isFinite(dz))
+              vectors.push(this.vector3D(dx, dy, dz, x, y, z));
+          } catch (e) {}
+        }
+      }
+    }
+    return vectors;
+  },
+
+  vectorField2D(fX, fY, rangeX = [-10, 10], rangeY = [-10, 10], step = 1) {
+    const vectors = [];
+    for (let x = rangeX[0]; x <= rangeX[1]; x += step) {
+      for (let y = rangeY[0]; y <= rangeY[1]; y += step) {
+        try {
+          const dx = fX(x, y),
+            dy = fY(x, y);
+          if (isFinite(dx) && isFinite(dy)) {
+            const v = this.vector(2, [dx, dy]);
+            v.origin = { x, y };
+            vectors.push(v);
+          }
+        } catch (e) {}
+      }
+    }
+    return vectors;
+  },
+
+  conic2D(A, B, C, D, E, F) {
+    return [
+      (x) => {
+        const a = C,
+          b = B * x + E,
+          c = A * x * x + D * x + F;
+        if (Math.abs(a) < 1e-7) return -c / b;
+        const delta = b * b - 4 * a * c;
+        return delta >= 0 ? (-b + Math.sqrt(delta)) / (2 * a) : NaN;
+      },
+      (x) => {
+        const a = C,
+          b = B * x + E,
+          c = A * x * x + D * x + F;
+        if (Math.abs(a) < 1e-7) return NaN;
+        const delta = b * b - 4 * a * c;
+        return delta >= 0 ? (-b - Math.sqrt(delta)) / (2 * a) : NaN;
+      },
+    ];
+  },
+
+  interpolationGN(points) {
+    const n = points.length;
+    if (n < 2) return (x) => points[0]?.y || 0;
+    const h = points[1].x - points[0].x,
+      y = points.map((p) => p.y),
+      diffs = [y];
+    for (let j = 1; j < n; j++) {
+      const col = [];
+      for (let i = 0; i < n - j; i++)
+        col.push(diffs[j - 1][i + 1] - diffs[j - 1][i]);
+      diffs.push(col);
+    }
+    const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
+    return (x) => {
+      const u = (x - points[0].x) / h;
+      let result = points[0].y,
+        uProd = 1;
+      for (let i = 1; i < n; i++) {
+        uProd *= u - (i - 1);
+        result += (uProd * diffs[i][0]) / fact(i);
+      }
+      return result;
+    };
+  },
+
+  pointList(func, interval = [-10, 10], step = 1) {
+    const list = [];
+    for (let x = interval[0]; x <= interval[1]; x += step)
+      list.push({ x, y: func(x) });
+    return list;
+  },
+
+  derivative(func, h = 0.001) {
+    return (x) => (func(x + h) - func(x - h)) / (2 * h);
+  },
+
+  integral(func, precision = 0.05) {
+    return (x) => {
+      let area = 0;
+      const steps = Math.abs(x) / precision,
+        sign = Math.sign(x);
+      for (let i = 0; i < steps; i++) {
+        const t = i * precision * sign;
+        area += (func(t) + func(t + precision * sign)) * 0.5 * precision * sign;
+      }
+      return area;
+    };
+  },
+
+  // ==========================================
+  // 6. MOTORES DE RENDERIZAÇÃO
+  // ==========================================
+
+  _drawAxisMarks(ctx, toPxX, toPxY, xMin, xMax, yMin, yMax, zeroX, zeroY) {
+    ctx.fillStyle = "#64748b";
+    ctx.strokeStyle = "#94a3b8";
+    ctx.font = "10px sans-serif";
+    ctx.lineWidth = 1;
+    const xStep = (xMax - xMin) / 10;
+    for (let i = 0; i <= 10; i++) {
+      const val = xMin + i * xStep,
+        px = toPxX(val);
+      ctx.beginPath();
+      ctx.moveTo(px, zeroY - 4);
+      ctx.lineTo(px, zeroY + 4);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.fillText(val.toFixed(1), px, zeroY + 15);
+    }
+    const yStep = (yMax - yMin) / 10;
+    for (let i = 0; i <= 10; i++) {
+      const val = yMin + i * yStep,
+        py = toPxY(val);
+      ctx.beginPath();
+      ctx.moveTo(zeroX - 4, py);
+      ctx.lineTo(zeroX + 4, py);
+      ctx.stroke();
+      ctx.textAlign = "right";
+      ctx.fillText(val.toFixed(1), zeroX - 8, py + 3);
+    }
+  },
+
+  multiLineGraph2D(datasets, interval = [-10, 10], options = {}) {
+    const {
+      width = 600,
+      height = 400,
+      mesh = true,
+      showAxisMarks = true,
+      padding = 45,
+      pointHover = false,
+    } = options;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    const [xMin, xMax] = interval;
+
+    let yMin = Infinity,
+      yMax = -Infinity;
+    const processedData = datasets.map((dataset) => {
+      const step = dataset.step || options.step || 0.1,
+        samples = [];
+      if (dataset.func) {
+        for (let x = xMin; x <= xMax; x += step) {
+          const y = dataset.func(x);
+          if (!isNaN(y) && isFinite(y)) {
+            yMin = Math.min(yMin, y);
+            yMax = Math.max(yMax, y);
+            samples.push({ x, y });
+          }
+        }
+      }
+      if (dataset.points)
+        dataset.points.forEach((p) => {
+          yMin = Math.min(yMin, p.y);
+          yMax = Math.max(yMax, p.y);
+        });
+      return { ...dataset, samples };
+    });
+
+    const yRange = yMax - yMin;
+    const adjYMin = yMin - (yRange * 0.1 || 1),
+      adjYMax = yMax + (yRange * 0.1 || 1);
+    const toPxX = (x) =>
+      padding + ((x - xMin) / (xMax - xMin)) * (width - 2 * padding);
+    const toPxY = (y) =>
+      height -
+      padding -
+      ((y - adjYMin) / (adjYMax - adjYMin)) * (height - 2 * padding);
+
+    const render = (hoverPoint = null) => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      if (mesh) {
+        ctx.strokeStyle = "#f1f5f9";
+        for (let i = 0; i <= 10; i++) {
+          const vx = xMin + i * ((xMax - xMin) / 10);
+          ctx.beginPath();
+          ctx.moveTo(toPxX(vx), padding);
+          ctx.lineTo(toPxX(vx), height - padding);
+          ctx.stroke();
+          const vy = adjYMin + i * ((adjYMax - adjYMin) / 10);
+          ctx.beginPath();
+          ctx.moveTo(padding, toPxY(vy));
+          ctx.lineTo(width - padding, toPxY(vy));
+          ctx.stroke();
+        }
+      }
+      const zY = Math.max(padding, Math.min(height - padding, toPxY(0))),
+        zX = Math.max(padding, Math.min(width - padding, toPxX(0)));
+      ctx.strokeStyle = "#64748b";
+      ctx.beginPath();
+      ctx.moveTo(padding, zY);
+      ctx.lineTo(width - padding, zY);
+      ctx.moveTo(zX, padding);
+      ctx.lineTo(zX, height - padding);
+      ctx.stroke();
+      if (showAxisMarks)
+        this._drawAxisMarks(
+          ctx,
+          toPxX,
+          toPxY,
+          xMin,
+          xMax,
+          adjYMin,
+          adjYMax,
+          zX,
+          zY,
+        );
+
+      processedData.forEach((data) => {
+        const color = data.color || "#3b82f6";
+        if (data.samples.length > 0) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          data.samples.forEach((p, i) =>
+            i === 0
+              ? ctx.moveTo(toPxX(p.x), toPxY(p.y))
+              : ctx.lineTo(toPxX(p.x), toPxY(p.y)),
+          );
+          ctx.stroke();
+        }
+        if (data.points) {
+          data.points.forEach((p) => {
+            ctx.fillStyle = data.pointColor || color;
+            ctx.beginPath();
+            ctx.arc(toPxX(p.x), toPxY(p.y), 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          });
+        }
+      });
+
+      if (hoverPoint) {
+        const px = toPxX(hoverPoint.x),
+          py = toPxY(hoverPoint.y);
+        ctx.beginPath();
+        ctx.arc(px, py, 7, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        const label = `(${hoverPoint.x.toFixed(2)}, ${hoverPoint.y.toFixed(2)})`;
+        ctx.font = "bold 11px sans-serif";
+        const textWidth = ctx.measureText(label).width;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.roundRect(px + 10, py - 30, textWidth + 15, 25, 5);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "left";
+        ctx.fillText(label, px + 17, py - 13);
+      }
+    };
+
+    render();
+
+    if (pointHover) {
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect(),
+          mx = e.clientX - rect.left,
+          my = e.clientY - rect.top;
+        let found = null;
+        const threshold = 8;
+        for (const data of processedData) {
+          if (data.points) {
+            for (const p of data.points) {
+              const px = toPxX(p.x),
+                py = toPxY(p.y);
+              if (Math.sqrt((mx - px) ** 2 + (my - py) ** 2) < threshold) {
+                found = p;
+                break;
+              }
+            }
+          }
+          if (found) break;
+        }
+        canvas.style.cursor = found ? "crosshair" : "default";
+        render(found);
+      });
+      canvas.addEventListener("mouseleave", () => render(null));
+    }
+    return canvas;
+  },
+
+  lineGraph2D(func, interval, options) {
+    return this.multiLineGraph2D([{ func, ...options }], interval, options);
+  },
+
+  vectorialGraph2D(vectors, options = {}) {
+    const {
+      width = 600,
+      height = 400,
+      color = "#f97316",
+      padding = 50,
+    } = options;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+
+    const toPx = (v, isX) =>
+      isX
+        ? padding + ((v + 10) / 20) * (width - 2 * padding)
+        : height - padding - ((v + 10) / 20) * (height - 2 * padding);
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    vectors.forEach((v) => {
+      const start = v.origin || { x: 0, y: 0 },
+        end = { x: start.x + v.data[0], y: start.y + v.data[1] };
+      const x1 = toPx(start.x, true),
+        y1 = toPx(start.y, false),
+        x2 = toPx(end.x, true),
+        y2 = toPx(end.y, false);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(
+        x2 - 8 * Math.cos(angle - 0.5),
+        y2 - 8 * Math.sin(angle - 0.5),
+      );
+      ctx.lineTo(
+        x2 - 8 * Math.cos(angle + 0.5),
+        y2 - 8 * Math.sin(angle + 0.5),
+      );
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+    return canvas;
+  },
+
   scene3D(objects, options = {}) {
     const {
       width = 600,
@@ -485,7 +714,6 @@ const PlotterAPI = {
       range = [-5, 5],
       showAxes = true,
     } = options;
-
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
@@ -497,7 +725,6 @@ const PlotterAPI = {
       ctx.clearRect(0, 0, width, height);
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, 0, width, height);
-
       const project = (x, y, z) => {
         const rx = x * Math.cos(yaw) - z * Math.sin(yaw),
           rz = x * Math.sin(yaw) + z * Math.cos(yaw);
@@ -530,7 +757,6 @@ const PlotterAPI = {
       }
 
       ctx.lineJoin = "round";
-
       objects.forEach((obj) => {
         ctx.strokeStyle = obj.color || "#e2e8f0";
         ctx.fillStyle = obj.color || "#e2e8f0";
@@ -648,9 +874,7 @@ const PlotterAPI = {
             return { pts, avgZ };
           });
 
-          // Algoritmo do Pintor (Painter's Algorithm) para Oclusão
           facesToDraw.sort((a, b) => b.avgZ - a.avgZ);
-
           facesToDraw.forEach((face) => {
             ctx.beginPath();
             face.pts.forEach((p, i) => {
@@ -658,7 +882,6 @@ const PlotterAPI = {
               else ctx.lineTo(p.px, p.py);
             });
             ctx.closePath();
-
             ctx.fillStyle = obj.fillColor || "rgba(56, 189, 248, 0.2)";
             ctx.fill();
             if (obj.showMesh !== false) {
@@ -702,247 +925,11 @@ const PlotterAPI = {
     return canvas;
   },
 
-  // ==========================================
-  // 5. CÁLCULO E ANÁLISE NUMÉRICA
-  // ==========================================
-
-  /**
-   * Interpolação polinomial (Método Gregory-Newton).
-   * @param {Array<{x:number, y:number}>} points - Pontos equidistantes.
-   * @returns {Function} Função interpoladora f(x).
-   */
-  interpolationGN(points) {
-    const n = points.length;
-    if (n < 2) return (x) => points[0]?.y || 0;
-    const h = points[1].x - points[0].x,
-      y = points.map((p) => p.y),
-      diffs = [y];
-    for (let j = 1; j < n; j++) {
-      const col = [];
-      for (let i = 0; i < n - j; i++)
-        col.push(diffs[j - 1][i + 1] - diffs[j - 1][i]);
-      diffs.push(col);
-    }
-    const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
-    return (x) => {
-      const u = (x - points[0].x) / h;
-      let result = points[0].y,
-        uProd = 1;
-      for (let i = 1; i < n; i++) {
-        uProd *= u - (i - 1);
-        result += (uProd * diffs[i][0]) / fact(i);
-      }
-      return result;
-    };
-  },
-
-  /** Derivada numérica (Diferença Central). */
-  derivative(func, h = 0.001) {
-    return (x) => (func(x + h) - func(x - h)) / (2 * h);
-  },
-
-  /** Integral numérica (Regra dos Trapézios Acumulada). */
-  integral(func, precision = 0.05) {
-    return (x) => {
-      let area = 0;
-      const steps = Math.abs(x) / precision,
-        sign = Math.sign(x);
-      for (let i = 0; i < steps; i++) {
-        const t = i * precision * sign;
-        area += (func(t) + func(t + precision * sign)) * 0.5 * precision * sign;
-      }
-      return area;
-    };
-  },
-
-  /**
-   * Converte Equação Geral das Cônicas para 2 funções f(x).
-   * Ax² + Bxy + Cy² + Dx + Ey + F = 0
-   */
-  conic2D(A, B, C, D, E, F) {
-    return [
-      (x) => {
-        const a = C,
-          b = B * x + E,
-          c = A * x * x + D * x + F;
-        if (Math.abs(a) < 1e-7) return -c / b;
-        const delta = b * b - 4 * a * c;
-        return delta >= 0 ? (-b + Math.sqrt(delta)) / (2 * a) : NaN;
-      },
-      (x) => {
-        const a = C,
-          b = B * x + E,
-          c = A * x * x + D * x + F;
-        if (Math.abs(a) < 1e-7) return NaN;
-        const delta = b * b - 4 * a * c;
-        return delta >= 0 ? (-b - Math.sqrt(delta)) / (2 * a) : NaN;
-      },
-    ];
-  },
-
-  // ==========================================
-  // 6. ÁLGEBRA LINEAR E MATRIZES
-  // ==========================================
-
-  /**
-   * Cria um objeto de matriz genérica a partir de um array bidimensional.
-   * @param {number[][]} data - Array 2D contendo os valores da matriz (ex: [[1, 2], [3, 4]]).
-   * @returns {Object} Objeto do tipo 'matrix' contendo os dados e as suas dimensões.
-   */
-  matrix(data) {
-    if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
-      throw new Error(
-        "Formato inválido. A matriz deve ser instanciada como um array 2D, ex: [[1, 2], [3, 4]]",
-      );
-    }
-    return {
-      type: "matrix",
-      data: data,
-      rows: data.length,
-      cols: data[0].length,
-    };
-  },
-
-  /**
-   * Adiciona duas matrizes (A + B).
-   * @param {Object} m1 - Primeira matriz.
-   * @param {Object} m2 - Segunda matriz.
-   * @returns {Object} Nova matriz resultante.
-   */
-  matrixAdd(m1, m2) {
-    if (m1.rows !== m2.rows || m1.cols !== m2.cols) {
-      throw new Error("Dimensões incompatíveis para adição de matrizes.");
-    }
-    const result = m1.data.map((row, i) =>
-      row.map((val, j) => val + m2.data[i][j]),
+  graph3D(func, rangeX = [-5, 5], rangeZ = [-5, 5], options = {}) {
+    return this.scene3D(
+      [{ type: "surface", func, color: options.colorX || "#38bdf8" }],
+      { ...options, range: rangeX },
     );
-    return this.matrix(result);
-  },
-
-  /**
-   * Subtrai duas matrizes (A - B).
-   * @param {Object} m1 - Primeira matriz.
-   * @param {Object} m2 - Segunda matriz.
-   * @returns {Object} Nova matriz resultante.
-   */
-  matrixSub(m1, m2) {
-    if (m1.rows !== m2.rows || m1.cols !== m2.cols) {
-      throw new Error("Dimensões incompatíveis para subtração de matrizes.");
-    }
-    const result = m1.data.map((row, i) =>
-      row.map((val, j) => val - m2.data[i][j]),
-    );
-    return this.matrix(result);
-  },
-
-  /**
-   * Multiplica duas matrizes (A * B).
-   * @param {Object} m1 - Matriz A (m x n).
-   * @param {Object} m2 - Matriz B (n x p).
-   * @returns {Object} Nova matriz resultante (m x p).
-   */
-  matrixMult(m1, m2) {
-    if (m1.cols !== m2.rows) {
-      throw new Error(
-        "Dimensões incompatíveis para multiplicação. O número de colunas da 1ª deve igualar as linhas da 2ª.",
-      );
-    }
-    const result = Array(m1.rows)
-      .fill(0)
-      .map(() => Array(m2.cols).fill(0));
-    for (let i = 0; i < m1.rows; i++) {
-      for (let j = 0; j < m2.cols; j++) {
-        for (let k = 0; k < m1.cols; k++) {
-          result[i][j] += m1.data[i][k] * m2.data[k][j];
-        }
-      }
-    }
-    return this.matrix(result);
-  },
-
-  /**
-   * Calcula a Matriz Transposta (inverte linhas com colunas).
-   * @param {Object} m - Matriz original.
-   * @returns {Object} Nova matriz transposta.
-   */
-  matrixTranspose(m) {
-    const result = Array(m.cols)
-      .fill(0)
-      .map(() => Array(m.rows).fill(0));
-    for (let i = 0; i < m.rows; i++) {
-      for (let j = 0; j < m.cols; j++) {
-        result[j][i] = m.data[i][j];
-      }
-    }
-    return this.matrix(result);
-  },
-
-  /**
-   * Calcula o determinante de uma matriz quadrada (Teorema de Laplace).
-   * @param {Object} m - Matriz quadrada.
-   * @returns {number} Valor do determinante.
-   */
-  matrixDet(m) {
-    if (m.rows !== m.cols) {
-      throw new Error(
-        "A matriz deve ser quadrada para calcular o determinante.",
-      );
-    }
-
-    // Função auxiliar recursiva
-    const calcDet = (mat) => {
-      if (mat.length === 1) return mat[0][0];
-      if (mat.length === 2)
-        return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
-
-      let det = 0;
-      for (let i = 0; i < mat.length; i++) {
-        // Obter a matriz menor (removendo a 1ª linha e a coluna i)
-        const minor = mat.slice(1).map((row) => row.filter((_, j) => j !== i));
-        const cofactor = (i % 2 === 0 ? 1 : -1) * mat[0][i] * calcDet(minor);
-        det += cofactor;
-      }
-      return det;
-    };
-
-    return calcDet(m.data);
-  },
-
-  /**
-   * Calcula a Matriz Inversa utilizando a Matriz Adjunta.
-   * @param {Object} m - Matriz quadrada inversível.
-   * @returns {Object} Matriz inversa.
-   */
-  matrixInverse(m) {
-    const det = this.matrixDet(m);
-    if (Math.abs(det) < 1e-10) {
-      throw new Error(
-        "Matriz singular (determinante nulo ou muito próximo a zero). Não possui inversa.",
-      );
-    }
-
-    const n = m.rows;
-    if (n === 1) return this.matrix([[1 / m.data[0][0]]]);
-
-    const adjugate = Array(n)
-      .fill(0)
-      .map(() => Array(n).fill(0));
-
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        // Encontrar a matriz menor excluindo a linha 'i' e a coluna 'j'
-        const minorData = m.data
-          .filter((_, rowIdx) => rowIdx !== i)
-          .map((row) => row.filter((_, colIdx) => colIdx !== j));
-
-        // A matriz adjunta é a transposta da matriz dos cofatores
-        // Logo, colocamos o valor calculado na posição [j][i]
-        const minorDet = this.matrixDet(this.matrix(minorData));
-        adjugate[j][i] = (((i + j) % 2 === 0 ? 1 : -1) * minorDet) / det;
-      }
-    }
-
-    return this.matrix(adjugate);
   },
 };
 
