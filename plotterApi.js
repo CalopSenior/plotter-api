@@ -37,6 +37,62 @@ const PlotterAPI = {
   },
 
   /**
+   * Cria um objeto vetor nativo da API
+   */
+  vector(dimension, coords) {
+    return { type: 'vector', dim: dimension, data: coords };
+  },
+
+  /**
+   * Renderiza a camada de vetores 2D.
+   * O fundo é transparente para permitir a sobreposição (mix-blend-mode) com a malha 2D principal.
+   */
+  vectorialGraph2D(vectors, options = {}) {
+    const { width = 600, height = 400, color = '#3b82f6', padding = 45 } = options;
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // IMPORTANTE: Limpar com transparência em vez de fundo branco
+    ctx.clearRect(0, 0, width, height);
+
+    // Escala base (igual à do multiLineGraph2D)
+    const toPxX = (v) => padding + ((v + 10) / 20) * (width - 2 * padding);
+    const toPxY = (v) => (height - padding) - ((v + 10) / 20) * (height - 2 * padding);
+
+    ctx.strokeStyle = color; 
+    ctx.lineWidth = 1.5;
+    
+    vectors.forEach(v => {
+      const start = v.origin || {x: 0, y: 0};
+      const end = {x: start.x + v.data[0], y: start.y + v.data[1]};
+      
+      const x1 = toPxX(start.x);
+      const y1 = toPxY(start.y);
+      const x2 = toPxX(end.x);
+      const y2 = toPxY(end.y);
+      
+      // Corpo do vetor (Reta)
+      ctx.beginPath(); 
+      ctx.moveTo(x1, y1); 
+      ctx.lineTo(x2, y2); 
+      ctx.stroke();
+      
+      // Ponta da seta (Arrowhead)
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath(); 
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 8 * Math.cos(angle - 0.5), y2 - 8 * Math.sin(angle - 0.5));
+      ctx.lineTo(x2 - 8 * Math.cos(angle + 0.5), y2 - 8 * Math.sin(angle + 0.5));
+      ctx.closePath(); 
+      ctx.fillStyle = color; 
+      ctx.fill();
+    });
+
+    return canvas;
+  },
+
+  /**
    * Cria uma reta 3D paramétrica.
    * @param {number[]} p0 - Ponto inicial [x, y, z].
    * @param {number[]} dir - Vetor diretor [dx, dy, dz].
