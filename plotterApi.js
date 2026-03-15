@@ -26,6 +26,10 @@ const PlotterAPI = {
 
   /** Cria um objeto vetor 2D nativo */
   vector(dimension, coords) {
+    if (!Array.isArray(coords)) {
+      console.error('vector(): coords deve ser um array', coords);
+      return null;
+    }
     return { type: "vector", dim: dimension, data: coords };
   },
 
@@ -250,9 +254,9 @@ const PlotterAPI = {
 
   matrix(data) {
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
-      throw new Error(
-        "Formato inválido. A matriz deve ser um array 2D, ex: [[1, 2], [3, 4]]",
-      );
+      const errorMsg = "Formato inválido. A matriz deve ser um array 2D, ex: [[1, 2], [3, 4]]";
+      console.error(errorMsg, 'Argumento recebido:', data);
+      throw new Error(errorMsg);
     }
     return {
       type: "matrix",
@@ -676,6 +680,11 @@ const PlotterAPI = {
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     vectors.forEach((v) => {
+      // Validação: garantir que o vetor tem a estructura esperada
+      if (!v || !v.data || !Array.isArray(v.data) || v.data.length < 2) {
+        console.warn('Vetor inválido ignorado:', v);
+        return;
+      }
       const start = v.origin || { x: 0, y: 0 },
         end = { x: start.x + v.data[0], y: start.y + v.data[1] };
       const x1 = toPx(start.x, true),
@@ -933,4 +942,20 @@ const PlotterAPI = {
   },
 };
 
+// ==========================================
+// SUPORTE MÚLTIPLOS PADRÕES DE IMPORT/EXPORT
+// ==========================================
+
+// Export para ES6 modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = PlotterAPI;
+  module.exports.default = PlotterAPI;
+}
+
+// Export para global (window)
+if (typeof window !== 'undefined') {
+  window.PlotterAPI = PlotterAPI;
+}
+
+// Export ES6 default
 export default PlotterAPI;
