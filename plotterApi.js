@@ -43,6 +43,70 @@ const PlotterAPI = {
     return { type: 'vector', dim: dimension, data: coords };
   },
 
+  // ==========================================
+  // CAMPOS VETORIAIS (GERADORES)
+  // ==========================================
+
+  /**
+   * Gera um Campo Vetorial 3D a partir de funções de componentes (P, Q, R).
+   * @param {Function} fX - Função para a componente X: f(x, y, z)
+   * @param {Function} fY - Função para a componente Y: f(x, y, z)
+   * @param {Function} fZ - Função para a componente Z: f(x, y, z)
+   * @param {number[]} [range=[-5, 5]] - Intervalo cúbico de amostragem [min, max]
+   * @param {number} [step=2] - Espaçamento entre os vetores gerados
+   * @returns {Array} Array de objetos vector3D (pronto para ser passado ao scene3D)
+   */
+  vectorField3D(fX, fY, fZ, range = [-5, 5], step = 2) {
+    const vectors = [];
+    for (let x = range[0]; x <= range[1]; x += step) {
+      for (let y = range[0]; y <= range[1]; y += step) {
+        for (let z = range[0]; z <= range[1]; z += step) {
+          try {
+            const dx = fX(x, y, z);
+            const dy = fY(x, y, z);
+            const dz = fZ(x, y, z);
+            
+            // Apenas cria o vetor se as funções retornarem números reais (evita divisões por zero)
+            if (isFinite(dx) && isFinite(dy) && isFinite(dz)) {
+              vectors.push(this.vector3D(dx, dy, dz, x, y, z));
+            }
+          } catch (e) {
+            // Ignora pontos de singularidade
+          }
+        }
+      }
+    }
+    return vectors;
+  },
+
+  /**
+   * Gera um Campo Vetorial 2D a partir de funções de componentes (P, Q).
+   * @param {Function} fX - Função para a componente X: f(x, y)
+   * @param {Function} fY - Função para a componente Y: f(x, y)
+   * @param {number[]} [rangeX=[-10, 10]] - Intervalo de amostragem X [min, max]
+   * @param {number[]} [rangeY=[-10, 10]] - Intervalo de amostragem Y [min, max]
+   * @param {number} [step=1] - Espaçamento entre os vetores gerados
+   * @returns {Array} Array de objetos vector (pronto para ser passado ao vectorialGraph2D)
+   */
+  vectorField2D(fX, fY, rangeX = [-10, 10], rangeY = [-10, 10], step = 1) {
+    const vectors = [];
+    for (let x = rangeX[0]; x <= rangeX[1]; x += step) {
+      for (let y = rangeY[0]; y <= rangeY[1]; y += step) {
+        try {
+          const dx = fX(x, y);
+          const dy = fY(x, y);
+          
+          if (isFinite(dx) && isFinite(dy)) {
+            const v = this.vector(2, [dx, dy]);
+            v.origin = { x, y }; // Define o ponto de aplicação da seta
+            vectors.push(v);
+          }
+        } catch (e) {}
+      }
+    }
+    return vectors;
+  },
+
   /**
    * Renderiza a camada de vetores 2D.
    * O fundo é transparente para permitir a sobreposição (mix-blend-mode) com a malha 2D principal.
