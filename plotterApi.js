@@ -1,7 +1,13 @@
 /**
  * PlotterAPI - Biblioteca COMPLETA para geração de gráficos, GA, álgebra linear e análise numérica.
- * Versão 2.0.0 (Unificada)
+ * Versão 2.0.1 (Corrigido - context-independent)
  */
+
+// Debug: validar se PlotterAPI foi definido
+if (typeof PlotterAPIDebug !== 'undefined') {
+  console.log('⚠️ PlotterAPI já foi definido anteriormente!');
+}
+
 const PlotterAPI = {
   // ==========================================
   // 1. CONSTRUTORES DE GEOMETRIA ANALÍTICA (GA)
@@ -269,7 +275,7 @@ const PlotterAPI = {
   matrixAdd(m1, m2) {
     if (m1.rows !== m2.rows || m1.cols !== m2.cols)
       throw new Error("Dimensões incompatíveis para adição.");
-    return this.matrix(
+    return PlotterAPI.matrix(
       m1.data.map((row, i) => row.map((val, j) => val + m2.data[i][j])),
     );
   },
@@ -277,7 +283,7 @@ const PlotterAPI = {
   matrixSub(m1, m2) {
     if (m1.rows !== m2.rows || m1.cols !== m2.cols)
       throw new Error("Dimensões incompatíveis para subtração.");
-    return this.matrix(
+    return PlotterAPI.matrix(
       m1.data.map((row, i) => row.map((val, j) => val - m2.data[i][j])),
     );
   },
@@ -295,7 +301,7 @@ const PlotterAPI = {
         }
       }
     }
-    return this.matrix(result);
+    return PlotterAPI.matrix(result);
   },
 
   matrixTranspose(m) {
@@ -305,7 +311,7 @@ const PlotterAPI = {
     for (let i = 0; i < m.rows; i++) {
       for (let j = 0; j < m.cols; j++) result[j][i] = m.data[i][j];
     }
-    return this.matrix(result);
+    return PlotterAPI.matrix(result);
   },
 
   matrixDet(m) {
@@ -325,11 +331,11 @@ const PlotterAPI = {
   },
 
   matrixInverse(m) {
-    const det = this.matrixDet(m);
+    const det = PlotterAPI.matrixDet(m);
     if (Math.abs(det) < 1e-10)
       throw new Error("Matriz singular. Não possui inversa.");
     const n = m.rows;
-    if (n === 1) return this.matrix([[1 / m.data[0][0]]]);
+    if (n === 1) return PlotterAPI.matrix([[1 / m.data[0][0]]]);
     const adjugate = Array(n)
       .fill(0)
       .map(() => Array(n).fill(0));
@@ -340,11 +346,11 @@ const PlotterAPI = {
           .map((row) => row.filter((_, c) => c !== j));
         adjugate[j][i] =
           (((i + j) % 2 === 0 ? 1 : -1) *
-            this.matrixDet(this.matrix(minorData))) /
+            PlotterAPI.matrixDet(PlotterAPI.matrix(minorData))) /
           det;
       }
     }
-    return this.matrix(adjugate);
+    return PlotterAPI.matrix(adjugate);
   },
 
   // ==========================================
@@ -361,7 +367,7 @@ const PlotterAPI = {
               dy = fY(x, y, z),
               dz = fZ(x, y, z);
             if (isFinite(dx) && isFinite(dy) && isFinite(dz))
-              vectors.push(this.vector3D(dx, dy, dz, x, y, z));
+              vectors.push(PlotterAPI.vector3D(dx, dy, dz, x, y, z));
           } catch (e) {}
         }
       }
@@ -377,7 +383,7 @@ const PlotterAPI = {
           const dx = fX(x, y),
             dy = fY(x, y);
           if (isFinite(dx) && isFinite(dy)) {
-            const v = this.vector(2, [dx, dy]);
+            const v = PlotterAPI.vector(2, [dx, dy]);
             v.origin = { x, y };
             vectors.push(v);
           }
@@ -567,7 +573,7 @@ const PlotterAPI = {
       ctx.lineTo(zX, height - padding);
       ctx.stroke();
       if (showAxisMarks)
-        this._drawAxisMarks(
+        PlotterAPI._drawAxisMarks(
           ctx,
           toPxX,
           toPxY,
@@ -656,7 +662,7 @@ const PlotterAPI = {
   },
 
   lineGraph2D(func, interval, options) {
-    return this.multiLineGraph2D([{ func, ...options }], interval, options);
+    return PlotterAPI.multiLineGraph2D([{ func, ...options }], interval, options);
   },
 
   vectorialGraph2D(vectors, options = {}) {
@@ -935,11 +941,65 @@ const PlotterAPI = {
   },
 
   graph3D(func, rangeX = [-5, 5], rangeZ = [-5, 5], options = {}) {
-    return this.scene3D(
+    return PlotterAPI.scene3D(
       [{ type: "surface", func, color: options.colorX || "#38bdf8" }],
       { ...options, range: rangeX },
     );
   },
+};
+
+// ==========================================
+// VALIDAÇÃO E DEBUG
+// ==========================================
+
+/** Método de teste para validar se PlotterAPI está funcional */
+PlotterAPI._testAll = function() {
+  const tests = {
+    '✓ point3D': () => PlotterAPI.point3D(1, 2, 3),
+    '✓ vector3D': () => PlotterAPI.vector3D(1, 2, 3),
+    '✓ line3D': () => PlotterAPI.line3D([0,0,0], [1,1,1]),
+    '✓ plane3D': () => PlotterAPI.plane3D(1, 2, 3, 4),
+    '✓ vector': () => PlotterAPI.vector(2, [1, 2]),
+    '✓ matrix': () => PlotterAPI.matrix([[1, 2], [3, 4]]),
+    '✓ matrixAdd': () => { const m = PlotterAPI.matrix([[1, 2], [3, 4]]); return PlotterAPI.matrixAdd(m, m); },
+    '✓ matrixSub': () => { const m = PlotterAPI.matrix([[1, 2], [3, 4]]); return PlotterAPI.matrixSub(m, m); },
+    '✓ matrixMult': () => { const m = PlotterAPI.matrix([[1, 2], [3, 4]]); return PlotterAPI.matrixMult(m, m); },
+    '✓ matrixTranspose': () => { const m = PlotterAPI.matrix([[1, 2], [3, 4]]); return PlotterAPI.matrixTranspose(m); },
+    '✓ matrixDet': () => { const m = PlotterAPI.matrix([[1, 2], [3, 4]]); return PlotterAPI.matrixDet(m); },
+    '✓ cube': () => PlotterAPI.cube(2),
+    '✓ sphere': () => PlotterAPI.sphere(1),
+    '✓ cylinder': () => PlotterAPI.cylinder(1, 2),
+    '✓ cone': () => PlotterAPI.cone(1, 2),
+    '✓ polyhedron': () => PlotterAPI.polyhedron([[0,0,0]], [[0]]),
+    '✓ pointList': () => PlotterAPI.pointList(x => x*x, [-5, 5], 0.5),
+    '✓ derivative': () => PlotterAPI.derivative(x => x*x)(2),
+    '✓ integral': () => PlotterAPI.integral(x => x*x)(2),
+    '✓ conic2D': () => PlotterAPI.conic2D(1, 0, 1, 0, 0, -1),
+    '✓ interpolationGN': () => PlotterAPI.interpolationGN([{x:0, y:0}, {x:1, y:1}]),
+  };
+  
+  const results = {};
+  let pass = 0, fail = 0;
+  
+  for (const [name, fn] of Object.entries(tests)) {
+    try {
+      fn();
+      results[name] = '✓';
+      pass++;
+    } catch (err) {
+      results[name] = `✗ ${err.message}`;
+      fail++;
+    }
+  }
+  
+  console.group('PlotterAPI Validation Tests');
+  for (const [name, result] of Object.entries(results)) {
+    console.log(result === '✓' ? `%c${name}` : `%c${name} ${result}`, result === '✓' ? 'color: green; font-weight: bold' : 'color: red;');
+  }
+  console.log(`\nResultado: ${pass}/${pass + fail} testes passaram`);
+  console.groupEnd();
+  
+  return pass === pass + fail;
 };
 
 // ==========================================
