@@ -6,11 +6,10 @@
  * álgebra linear, geometria 2D/3D e renderização de poliedros.
  */
 const PlotterAPI = {
-  
   // ==========================================
   // 1. CONSTRUTORES DE GEOMETRIA ANALÍTICA 3D
   // ==========================================
-  
+
   /**
    * Cria um ponto no espaço 3D.
    * @param {number} x - Coordenada X.
@@ -18,8 +17,8 @@ const PlotterAPI = {
    * @param {number} z - Coordenada Z.
    * @returns {Object} Objeto do tipo 'point3D'.
    */
-  point3D(x, y, z) { 
-    return { type: 'point3D', coords: [x, y, z] }; 
+  point3D(x, y, z) {
+    return { type: "point3D", coords: [x, y, z] };
   },
 
   /**
@@ -32,15 +31,19 @@ const PlotterAPI = {
    * @param {number} [originZ=0] - Origem Z do vetor.
    * @returns {Object} Objeto do tipo 'vector3D'.
    */
-  vector3D(dx, dy, dz, originX = 0, originY = 0, originZ = 0) { 
-    return { type: 'vector3D', dir: [dx, dy, dz], origin: [originX, originY, originZ] }; 
+  vector3D(dx, dy, dz, originX = 0, originY = 0, originZ = 0) {
+    return {
+      type: "vector3D",
+      dir: [dx, dy, dz],
+      origin: [originX, originY, originZ],
+    };
   },
 
   /**
    * Cria um objeto vetor nativo da API
    */
   vector(dimension, coords) {
-    return { type: 'vector', dim: dimension, data: coords };
+    return { type: "vector", dim: dimension, data: coords };
   },
 
   // ==========================================
@@ -65,7 +68,7 @@ const PlotterAPI = {
             const dx = fX(x, y, z);
             const dy = fY(x, y, z);
             const dz = fZ(x, y, z);
-            
+
             // Apenas cria o vetor se as funções retornarem números reais (evita divisões por zero)
             if (isFinite(dx) && isFinite(dy) && isFinite(dz)) {
               vectors.push(this.vector3D(dx, dy, dz, x, y, z));
@@ -95,7 +98,7 @@ const PlotterAPI = {
         try {
           const dx = fX(x, y);
           const dy = fY(x, y);
-          
+
           if (isFinite(dx) && isFinite(dy)) {
             const v = this.vector(2, [dx, dy]);
             v.origin = { x, y }; // Define o ponto de aplicação da seta
@@ -112,44 +115,57 @@ const PlotterAPI = {
    * O fundo é transparente para permitir a sobreposição (mix-blend-mode) com a malha 2D principal.
    */
   vectorialGraph2D(vectors, options = {}) {
-    const { width = 600, height = 400, color = '#3b82f6', padding = 45 } = options;
-    const canvas = document.createElement('canvas');
-    canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const {
+      width = 600,
+      height = 400,
+      color = "#3b82f6",
+      padding = 45,
+    } = options;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
 
     // IMPORTANTE: Limpar com transparência em vez de fundo branco
     ctx.clearRect(0, 0, width, height);
 
     // Escala base (igual à do multiLineGraph2D)
     const toPxX = (v) => padding + ((v + 10) / 20) * (width - 2 * padding);
-    const toPxY = (v) => (height - padding) - ((v + 10) / 20) * (height - 2 * padding);
+    const toPxY = (v) =>
+      height - padding - ((v + 10) / 20) * (height - 2 * padding);
 
-    ctx.strokeStyle = color; 
+    ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
-    
-    vectors.forEach(v => {
-      const start = v.origin || {x: 0, y: 0};
-      const end = {x: start.x + v.data[0], y: start.y + v.data[1]};
-      
+
+    vectors.forEach((v) => {
+      const start = v.origin || { x: 0, y: 0 };
+      const end = { x: start.x + v.data[0], y: start.y + v.data[1] };
+
       const x1 = toPxX(start.x);
       const y1 = toPxY(start.y);
       const x2 = toPxX(end.x);
       const y2 = toPxY(end.y);
-      
+
       // Corpo do vetor (Reta)
-      ctx.beginPath(); 
-      ctx.moveTo(x1, y1); 
-      ctx.lineTo(x2, y2); 
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
       ctx.stroke();
-      
+
       // Ponta da seta (Arrowhead)
       const angle = Math.atan2(y2 - y1, x2 - x1);
-      ctx.beginPath(); 
+      ctx.beginPath();
       ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - 8 * Math.cos(angle - 0.5), y2 - 8 * Math.sin(angle - 0.5));
-      ctx.lineTo(x2 - 8 * Math.cos(angle + 0.5), y2 - 8 * Math.sin(angle + 0.5));
-      ctx.closePath(); 
-      ctx.fillStyle = color; 
+      ctx.lineTo(
+        x2 - 8 * Math.cos(angle - 0.5),
+        y2 - 8 * Math.sin(angle - 0.5),
+      );
+      ctx.lineTo(
+        x2 - 8 * Math.cos(angle + 0.5),
+        y2 - 8 * Math.sin(angle + 0.5),
+      );
+      ctx.closePath();
+      ctx.fillStyle = color;
       ctx.fill();
     });
 
@@ -162,8 +178,8 @@ const PlotterAPI = {
    * @param {number[]} dir - Vetor diretor [dx, dy, dz].
    * @returns {Object} Objeto do tipo 'line3D'.
    */
-  line3D(p0, dir) { 
-    return { type: 'line3D', p0, dir }; 
+  line3D(p0, dir) {
+    return { type: "line3D", p0, dir };
   },
 
   /**
@@ -174,8 +190,8 @@ const PlotterAPI = {
    * @param {number} d - Termo independente D.
    * @returns {Object} Objeto do tipo 'plane3D'.
    */
-  plane3D(a, b, c, d) { 
-    return { type: 'plane3D', eq: [a, b, c, d] }; 
+  plane3D(a, b, c, d) {
+    return { type: "plane3D", eq: [a, b, c, d] };
   },
 
   // ==========================================
@@ -188,8 +204,8 @@ const PlotterAPI = {
    * @param {number[][]} faces - Array de índices ligando os vértices [[0,1,2], ...].
    * @returns {Object} Objeto do tipo 'polyhedron'.
    */
-  polyhedron(vertices, faces) { 
-    return { type: 'polyhedron', vertices, faces }; 
+  polyhedron(vertices, faces) {
+    return { type: "polyhedron", vertices, faces };
   },
 
   /**
@@ -199,13 +215,27 @@ const PlotterAPI = {
    * @returns {Object} Objeto do tipo 'polyhedron'.
    */
   cube(size = 2, center = [0, 0, 0]) {
-    const s = size / 2, [cx, cy, cz] = center;
+    const s = size / 2,
+      [cx, cy, cz] = center;
     const v = [
-      [cx-s, cy-s, cz-s], [cx+s, cy-s, cz-s], [cx+s, cy+s, cz-s], [cx-s, cy+s, cz-s],
-      [cx-s, cy-s, cz+s], [cx+s, cy-s, cz+s], [cx+s, cy+s, cz+s], [cx-s, cy+s, cz+s]
+      [cx - s, cy - s, cz - s],
+      [cx + s, cy - s, cz - s],
+      [cx + s, cy + s, cz - s],
+      [cx - s, cy + s, cz - s],
+      [cx - s, cy - s, cz + s],
+      [cx + s, cy - s, cz + s],
+      [cx + s, cy + s, cz + s],
+      [cx - s, cy + s, cz + s],
     ];
-    const f = [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [4, 5, 1, 0], [3, 2, 6, 7]];
-    return { type: 'polyhedron', vertices: v, faces: f };
+    const f = [
+      [0, 1, 2, 3],
+      [5, 4, 7, 6],
+      [4, 0, 3, 7],
+      [1, 5, 6, 2],
+      [4, 5, 1, 0],
+      [3, 2, 6, 7],
+    ];
+    return { type: "polyhedron", vertices: v, faces: f };
   },
 
   /**
@@ -216,23 +246,30 @@ const PlotterAPI = {
    * @returns {Object} Objeto do tipo 'polyhedron'.
    */
   sphere(radius = 1, center = [0, 0, 0], segments = 16) {
-    const vertices = [], faces = [];
+    const vertices = [],
+      faces = [];
     const [cx, cy, cz] = center;
     for (let i = 0; i <= segments; i++) {
       const phi = (i / segments) * Math.PI;
       for (let j = 0; j <= segments; j++) {
         const theta = (j / segments) * 2 * Math.PI;
-        vertices.push([cx + radius * Math.sin(phi) * Math.cos(theta), cy + radius * Math.cos(phi), cz + radius * Math.sin(phi) * Math.sin(theta)]);
+        vertices.push([
+          cx + radius * Math.sin(phi) * Math.cos(theta),
+          cy + radius * Math.cos(phi),
+          cz + radius * Math.sin(phi) * Math.sin(theta),
+        ]);
       }
     }
     for (let i = 0; i < segments; i++) {
       for (let j = 0; j < segments; j++) {
-        const p1 = i * (segments + 1) + j, p2 = p1 + 1;
-        const p3 = (i + 1) * (segments + 1) + j + 1, p4 = (i + 1) * (segments + 1) + j;
+        const p1 = i * (segments + 1) + j,
+          p2 = p1 + 1;
+        const p3 = (i + 1) * (segments + 1) + j + 1,
+          p4 = (i + 1) * (segments + 1) + j;
         faces.push([p1, p2, p3, p4]);
       }
     }
-    return { type: 'polyhedron', vertices, faces };
+    return { type: "polyhedron", vertices, faces };
   },
 
   /**
@@ -244,21 +281,30 @@ const PlotterAPI = {
    * @returns {Object} Objeto do tipo 'polyhedron'.
    */
   cylinder(radius = 1, height = 2, center = [0, 0, 0], segments = 16) {
-    const vertices = [], faces = [];
-    const [cx, cy, cz] = center, h2 = height / 2;
-    vertices.push([cx, cy + h2, cz]); vertices.push([cx, cy - h2, cz]);
+    const vertices = [],
+      faces = [];
+    const [cx, cy, cz] = center,
+      h2 = height / 2;
+    vertices.push([cx, cy + h2, cz]);
+    vertices.push([cx, cy - h2, cz]);
     const offset = 2;
     for (let i = 0; i <= segments; i++) {
       const theta = (i / segments) * 2 * Math.PI;
-      const x = cx + radius * Math.cos(theta), z = cz + radius * Math.sin(theta);
-      vertices.push([x, cy + h2, z]); vertices.push([x, cy - h2, z]);
+      const x = cx + radius * Math.cos(theta),
+        z = cz + radius * Math.sin(theta);
+      vertices.push([x, cy + h2, z]);
+      vertices.push([x, cy - h2, z]);
     }
     for (let i = 0; i < segments; i++) {
-      const t1 = offset + i * 2, b1 = offset + i * 2 + 1;
-      const t2 = offset + (i + 1) * 2, b2 = offset + (i + 1) * 2 + 1;
-      faces.push([t1, b1, b2, t2]); faces.push([0, t1, t2]); faces.push([1, b2, b1]);
+      const t1 = offset + i * 2,
+        b1 = offset + i * 2 + 1;
+      const t2 = offset + (i + 1) * 2,
+        b2 = offset + (i + 1) * 2 + 1;
+      faces.push([t1, b1, b2, t2]);
+      faces.push([0, t1, t2]);
+      faces.push([1, b2, b1]);
     }
-    return { type: 'polyhedron', vertices, faces };
+    return { type: "polyhedron", vertices, faces };
   },
 
   /**
@@ -270,19 +316,28 @@ const PlotterAPI = {
    * @returns {Object} Objeto do tipo 'polyhedron'.
    */
   cone(radius = 1, height = 2, center = [0, 0, 0], segments = 16) {
-    const vertices = [], faces = [];
-    const [cx, cy, cz] = center, h2 = height / 2;
-    vertices.push([cx, cy + h2, cz]); vertices.push([cx, cy - h2, cz]);
+    const vertices = [],
+      faces = [];
+    const [cx, cy, cz] = center,
+      h2 = height / 2;
+    vertices.push([cx, cy + h2, cz]);
+    vertices.push([cx, cy - h2, cz]);
     const offset = 2;
     for (let i = 0; i <= segments; i++) {
       const theta = (i / segments) * 2 * Math.PI;
-      vertices.push([cx + radius * Math.cos(theta), cy - h2, cz + radius * Math.sin(theta)]);
+      vertices.push([
+        cx + radius * Math.cos(theta),
+        cy - h2,
+        cz + radius * Math.sin(theta),
+      ]);
     }
     for (let i = 0; i < segments; i++) {
-      const b1 = offset + i, b2 = offset + i + 1;
-      faces.push([0, b1, b2]); faces.push([1, b2, b1]);
+      const b1 = offset + i,
+        b2 = offset + i + 1;
+      faces.push([0, b1, b2]);
+      faces.push([1, b2, b1]);
     }
-    return { type: 'polyhedron', vertices, faces };
+    return { type: "polyhedron", vertices, faces };
   },
 
   // ==========================================
@@ -297,22 +352,42 @@ const PlotterAPI = {
    */
   projectToPlane(obj, plane) {
     const [a, b, c, d] = plane.eq;
-    const denom = a*a + b*b + c*c;
+    const denom = a * a + b * b + c * c;
     const projPoint = (pt) => {
-      const [x, y, z] = pt; const t = -(a*x + b*y + c*z + d) / denom;
-      return [x + t*a, y + t*b, z + t*c];
+      const [x, y, z] = pt;
+      const t = -(a * x + b * y + c * z + d) / denom;
+      return [x + t * a, y + t * b, z + t * c];
     };
-    if (obj.type === 'point3D') return { type: 'point3D', coords: projPoint(obj.coords) };
-    if (obj.type === 'vector3D') {
-      const pO = projPoint(obj.origin), dest = projPoint([obj.origin[0] + obj.dir[0], obj.origin[1] + obj.dir[1], obj.origin[2] + obj.dir[2]]);
-      return { type: 'vector3D', dir: [dest[0]-pO[0], dest[1]-pO[1], dest[2]-pO[2]], origin: pO };
-    } 
-    if (obj.type === 'line3D') {
-      const p0 = projPoint(obj.p0), p1 = projPoint([obj.p0[0] + obj.dir[0], obj.p0[1] + obj.dir[1], obj.p0[2] + obj.dir[2]]);
-      return { type: 'line3D', p0: p0, dir: [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]] };
+    if (obj.type === "point3D")
+      return { type: "point3D", coords: projPoint(obj.coords) };
+    if (obj.type === "vector3D") {
+      const pO = projPoint(obj.origin),
+        dest = projPoint([
+          obj.origin[0] + obj.dir[0],
+          obj.origin[1] + obj.dir[1],
+          obj.origin[2] + obj.dir[2],
+        ]);
+      return {
+        type: "vector3D",
+        dir: [dest[0] - pO[0], dest[1] - pO[1], dest[2] - pO[2]],
+        origin: pO,
+      };
     }
-    if (obj.type === 'polyhedron') {
-      return { ...obj, vertices: obj.vertices.map(v => projPoint(v)) };
+    if (obj.type === "line3D") {
+      const p0 = projPoint(obj.p0),
+        p1 = projPoint([
+          obj.p0[0] + obj.dir[0],
+          obj.p0[1] + obj.dir[1],
+          obj.p0[2] + obj.dir[2],
+        ]);
+      return {
+        type: "line3D",
+        p0: p0,
+        dir: [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]],
+      };
+    }
+    if (obj.type === "polyhedron") {
+      return { ...obj, vertices: obj.vertices.map((v) => projPoint(v)) };
     }
     return obj;
   },
@@ -326,23 +401,36 @@ const PlotterAPI = {
    * @returns {Object} Objeto do tipo 'segments3D' contendo a curva de corte.
    */
   intersectSurfacePlane(func, planeEq, range = [-5, 5], step = 0.2) {
-    const [a, b, c, d] = planeEq, segments = [];
+    const [a, b, c, d] = planeEq,
+      segments = [];
     const F = (x, z) => a * x + b * func(x, z) + c * z + d;
     for (let x = range[0]; x < range[1]; x += step) {
       for (let z = range[0]; z < range[1]; z += step) {
-        const p1 = [x, z], p2 = [x+step, z], p3 = [x+step, z+step], p4 = [x, z+step];
-        const v1 = F(...p1), v2 = F(...p2), v3 = F(...p3), v4 = F(...p4), pts = [];
+        const p1 = [x, z],
+          p2 = [x + step, z],
+          p3 = [x + step, z + step],
+          p4 = [x, z + step];
+        const v1 = F(...p1),
+          v2 = F(...p2),
+          v3 = F(...p3),
+          v4 = F(...p4),
+          pts = [];
         const addIntersection = (valA, valB, ptA, ptB) => {
           if (valA * valB <= 0 && valA !== valB) {
-            const t = valA / (valA - valB), ix = ptA[0] + t * (ptB[0] - ptA[0]), iz = ptA[1] + t * (ptB[1] - ptA[1]);
+            const t = valA / (valA - valB),
+              ix = ptA[0] + t * (ptB[0] - ptA[0]),
+              iz = ptA[1] + t * (ptB[1] - ptA[1]);
             pts.push([ix, func(ix, iz), iz]);
           }
         };
-        addIntersection(v1, v2, p1, p2); addIntersection(v2, v3, p2, p3); addIntersection(v3, v4, p3, p4); addIntersection(v4, v1, p4, p1);
+        addIntersection(v1, v2, p1, p2);
+        addIntersection(v2, v3, p2, p3);
+        addIntersection(v3, v4, p3, p4);
+        addIntersection(v4, v1, p4, p1);
         if (pts.length >= 2) segments.push([pts[0], pts[1]]);
       }
     }
-    return { type: 'segments3D', segments };
+    return { type: "segments3D", segments };
   },
 
   /**
@@ -353,22 +441,28 @@ const PlotterAPI = {
    */
   intersectPolyhedronPlane(poly, plane) {
     const [a, b, c, d] = plane.eq;
-    const dist = (v) => a*v[0] + b*v[1] + c*v[2] + d;
+    const dist = (v) => a * v[0] + b * v[1] + c * v[2] + d;
     const segments = [];
-    poly.faces.forEach(face => {
+    poly.faces.forEach((face) => {
       const pts = [];
       for (let i = 0; i < face.length; i++) {
-        const p1 = poly.vertices[face[i]], p2 = poly.vertices[face[(i + 1) % face.length]];
-        const d1 = dist(p1), d2 = dist(p2);
+        const p1 = poly.vertices[face[i]],
+          p2 = poly.vertices[face[(i + 1) % face.length]];
+        const d1 = dist(p1),
+          d2 = dist(p2);
         if (Math.abs(d1) < 1e-7) pts.push(p1);
         else if (d1 * d2 < 0) {
           const t = d1 / (d1 - d2);
-          pts.push([p1[0] + t*(p2[0]-p1[0]), p1[1] + t*(p2[1]-p1[1]), p1[2] + t*(p2[2]-p1[2])]);
+          pts.push([
+            p1[0] + t * (p2[0] - p1[0]),
+            p1[1] + t * (p2[1] - p1[1]),
+            p1[2] + t * (p2[2] - p1[2]),
+          ]);
         }
       }
       if (pts.length >= 2) segments.push([pts[0], pts[1]]);
     });
-    return { type: 'segments3D', segments };
+    return { type: "segments3D", segments };
   },
 
   // ==========================================
@@ -383,94 +477,173 @@ const PlotterAPI = {
    */
   scene3D(objects, options = {}) {
     const {
-      width = 600, height = 400,
-      step = 0.5, scale = 25,
-      interactive = true, range = [-5, 5],
-      showAxes = true
+      width = 600,
+      height = 400,
+      step = 0.5,
+      scale = 25,
+      interactive = true,
+      range = [-5, 5],
+      showAxes = true,
     } = options;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    let pitch = 0.6, yaw = 0.8;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    let pitch = 0.6,
+      yaw = 0.8;
 
     const render = () => {
-      ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, width, height);
-      
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, width, height);
+
       const project = (x, y, z) => {
-        const rx = x * Math.cos(yaw) - z * Math.sin(yaw), rz = x * Math.sin(yaw) + z * Math.cos(yaw);
-        const ry = y * Math.cos(pitch) - rz * Math.sin(pitch), pz = y * Math.sin(pitch) + rz * Math.cos(pitch); 
+        const rx = x * Math.cos(yaw) - z * Math.sin(yaw),
+          rz = x * Math.sin(yaw) + z * Math.cos(yaw);
+        const ry = y * Math.cos(pitch) - rz * Math.sin(pitch),
+          pz = y * Math.sin(pitch) + rz * Math.cos(pitch);
         return { px: width / 2 + rx * scale, py: height / 2 - ry * scale, pz };
       };
 
       if (showAxes) {
-        const origin = project(0, 0, 0), pX = project(range[1], 0, 0), pY = project(0, range[1], 0), pZ = project(0, 0, range[1]);
+        const origin = project(0, 0, 0),
+          pX = project(range[1], 0, 0),
+          pY = project(0, range[1], 0),
+          pZ = project(0, 0, range[1]);
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(pX.px, pX.py); ctx.stroke();
-        ctx.strokeStyle = '#22c55e'; ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(pY.px, pY.py); ctx.stroke();
-        ctx.strokeStyle = '#3b82f6'; ctx.beginPath(); ctx.moveTo(origin.px, origin.py); ctx.lineTo(pZ.px, pZ.py); ctx.stroke();
+        ctx.strokeStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.moveTo(origin.px, origin.py);
+        ctx.lineTo(pX.px, pX.py);
+        ctx.stroke();
+        ctx.strokeStyle = "#22c55e";
+        ctx.beginPath();
+        ctx.moveTo(origin.px, origin.py);
+        ctx.lineTo(pY.px, pY.py);
+        ctx.stroke();
+        ctx.strokeStyle = "#3b82f6";
+        ctx.beginPath();
+        ctx.moveTo(origin.px, origin.py);
+        ctx.lineTo(pZ.px, pZ.py);
+        ctx.stroke();
       }
 
-      ctx.lineJoin = 'round';
+      ctx.lineJoin = "round";
 
-      objects.forEach(obj => {
-        ctx.strokeStyle = obj.color || '#e2e8f0'; ctx.fillStyle = obj.color || '#e2e8f0'; ctx.lineWidth = obj.lineWidth || 2;
+      objects.forEach((obj) => {
+        ctx.strokeStyle = obj.color || "#e2e8f0";
+        ctx.fillStyle = obj.color || "#e2e8f0";
+        ctx.lineWidth = obj.lineWidth || 2;
 
-        if (obj.type === 'point3D') {
-          const { px, py } = project(...obj.coords); ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
-        } 
-        else if (obj.type === 'vector3D') {
-          const o = obj.origin, end = [o[0] + obj.dir[0], o[1] + obj.dir[1], o[2] + obj.dir[2]];
-          const p1 = project(...o), p2 = project(...end);
-          ctx.beginPath(); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); ctx.stroke();
+        if (obj.type === "point3D") {
+          const { px, py } = project(...obj.coords);
+          ctx.beginPath();
+          ctx.arc(px, py, 5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (obj.type === "vector3D") {
+          const o = obj.origin,
+            end = [o[0] + obj.dir[0], o[1] + obj.dir[1], o[2] + obj.dir[2]];
+          const p1 = project(...o),
+            p2 = project(...end);
+          ctx.beginPath();
+          ctx.moveTo(p1.px, p1.py);
+          ctx.lineTo(p2.px, p2.py);
+          ctx.stroke();
           const angle = Math.atan2(p2.py - p1.py, p2.px - p1.px);
-          ctx.beginPath(); ctx.moveTo(p2.px, p2.py); ctx.lineTo(p2.px - 10 * Math.cos(angle - 0.5), p2.py - 10 * Math.sin(angle - 0.5)); ctx.lineTo(p2.px - 10 * Math.cos(angle + 0.5), p2.py - 10 * Math.sin(angle + 0.5)); ctx.closePath(); ctx.fill();
-        } 
-        else if (obj.type === 'line3D') {
-          const p0 = obj.p0, dir = obj.dir, ext1 = project(p0[0] - dir[0] * 50, p0[1] - dir[1] * 50, p0[2] - dir[2] * 50), ext2 = project(p0[0] + dir[0] * 50, p0[1] + dir[1] * 50, p0[2] + dir[2] * 50);
-          ctx.beginPath(); ctx.moveTo(ext1.px, ext1.py); ctx.lineTo(ext2.px, ext2.py); ctx.stroke();
-        } 
-        else if (obj.type === 'plane3D') {
-          const [a, b, c, d] = obj.eq; ctx.globalAlpha = 0.4; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p2.px, p2.py);
+          ctx.lineTo(
+            p2.px - 10 * Math.cos(angle - 0.5),
+            p2.py - 10 * Math.sin(angle - 0.5),
+          );
+          ctx.lineTo(
+            p2.px - 10 * Math.cos(angle + 0.5),
+            p2.py - 10 * Math.sin(angle + 0.5),
+          );
+          ctx.closePath();
+          ctx.fill();
+        } else if (obj.type === "line3D") {
+          const p0 = obj.p0,
+            dir = obj.dir,
+            ext1 = project(
+              p0[0] - dir[0] * 50,
+              p0[1] - dir[1] * 50,
+              p0[2] - dir[2] * 50,
+            ),
+            ext2 = project(
+              p0[0] + dir[0] * 50,
+              p0[1] + dir[1] * 50,
+              p0[2] + dir[2] * 50,
+            );
+          ctx.beginPath();
+          ctx.moveTo(ext1.px, ext1.py);
+          ctx.lineTo(ext2.px, ext2.py);
+          ctx.stroke();
+        } else if (obj.type === "plane3D") {
+          const [a, b, c, d] = obj.eq;
+          ctx.globalAlpha = 0.4;
+          ctx.lineWidth = 1;
           const drawPlaneGrid = (isCross) => {
-            for(let u = range[0]; u <= range[1]; u += step) {
+            for (let u = range[0]; u <= range[1]; u += step) {
               ctx.beginPath();
-              for(let v = range[0]; v <= range[1]; v += step) {
+              for (let v = range[0]; v <= range[1]; v += step) {
                 let x, y, z;
-                if (Math.abs(b) > 0.01) { x = isCross ? v : u; z = isCross ? u : v; y = (-d - a*x - c*z)/b; }
-                else if (Math.abs(c) > 0.01) { x = isCross ? v : u; y = isCross ? u : v; z = (-d - a*x - b*y)/c; }
-                else { y = isCross ? v : u; z = isCross ? u : v; x = (-d - b*y - c*z)/a; }
+                if (Math.abs(b) > 0.01) {
+                  x = isCross ? v : u;
+                  z = isCross ? u : v;
+                  y = (-d - a * x - c * z) / b;
+                } else if (Math.abs(c) > 0.01) {
+                  x = isCross ? v : u;
+                  y = isCross ? u : v;
+                  z = (-d - a * x - b * y) / c;
+                } else {
+                  y = isCross ? v : u;
+                  z = isCross ? u : v;
+                  x = (-d - b * y - c * z) / a;
+                }
                 const { px, py } = project(x, y, z);
-                if (v === range[0]) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                if (v === range[0]) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
               }
               ctx.stroke();
             }
-          }
-          drawPlaneGrid(false); drawPlaneGrid(true); ctx.globalAlpha = 1.0;
-        }
-        else if (obj.type === 'surface') {
-           ctx.lineWidth = 1;
-           const drawSurfaceGrid = (isCross) => {
-             for(let u = range[0]; u <= range[1]; u += step) {
-                ctx.beginPath();
-                for(let v = range[0]; v <= range[1]; v += step) {
-                   const x = isCross ? v : u; const z = isCross ? u : v; const {px,py} = project(x, obj.func(x, z), z);
-                   if (v === range[0]) ctx.moveTo(px,py); else ctx.lineTo(px,py);
-                }
-                ctx.stroke();
-             }
-           }
-           drawSurfaceGrid(false); drawSurfaceGrid(true);
-        }
-        else if (obj.type === 'segments3D') {
-           ctx.beginPath(); if (obj.dashed) ctx.setLineDash([5, 5]);
-           obj.segments.forEach(seg => { const p1 = project(...seg[0]), p2 = project(...seg[1]); ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); });
-           ctx.stroke(); ctx.setLineDash([]); 
-        }
-        else if (obj.type === 'polyhedron') {
-          const projVerts = obj.vertices.map(v => project(...v));
-          const facesToDraw = obj.faces.map(faceIndices => {
-            const pts = faceIndices.map(idx => projVerts[idx]);
+          };
+          drawPlaneGrid(false);
+          drawPlaneGrid(true);
+          ctx.globalAlpha = 1.0;
+        } else if (obj.type === "surface") {
+          ctx.lineWidth = 1;
+          const drawSurfaceGrid = (isCross) => {
+            for (let u = range[0]; u <= range[1]; u += step) {
+              ctx.beginPath();
+              for (let v = range[0]; v <= range[1]; v += step) {
+                const x = isCross ? v : u;
+                const z = isCross ? u : v;
+                const { px, py } = project(x, obj.func(x, z), z);
+                if (v === range[0]) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+              }
+              ctx.stroke();
+            }
+          };
+          drawSurfaceGrid(false);
+          drawSurfaceGrid(true);
+        } else if (obj.type === "segments3D") {
+          ctx.beginPath();
+          if (obj.dashed) ctx.setLineDash([5, 5]);
+          obj.segments.forEach((seg) => {
+            const p1 = project(...seg[0]),
+              p2 = project(...seg[1]);
+            ctx.moveTo(p1.px, p1.py);
+            ctx.lineTo(p2.px, p2.py);
+          });
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else if (obj.type === "polyhedron") {
+          const projVerts = obj.vertices.map((v) => project(...v));
+          const facesToDraw = obj.faces.map((faceIndices) => {
+            const pts = faceIndices.map((idx) => projVerts[idx]);
             const avgZ = pts.reduce((sum, p) => sum + p.pz, 0) / pts.length;
             return { pts, avgZ };
           });
@@ -478,14 +651,20 @@ const PlotterAPI = {
           // Algoritmo do Pintor (Painter's Algorithm) para Oclusão
           facesToDraw.sort((a, b) => b.avgZ - a.avgZ);
 
-          facesToDraw.forEach(face => {
+          facesToDraw.forEach((face) => {
             ctx.beginPath();
-            face.pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.px, p.py); else ctx.lineTo(p.px, p.py); });
+            face.pts.forEach((p, i) => {
+              if (i === 0) ctx.moveTo(p.px, p.py);
+              else ctx.lineTo(p.px, p.py);
+            });
             ctx.closePath();
 
-            ctx.fillStyle = obj.fillColor || 'rgba(56, 189, 248, 0.2)'; ctx.fill();
+            ctx.fillStyle = obj.fillColor || "rgba(56, 189, 248, 0.2)";
+            ctx.fill();
             if (obj.showMesh !== false) {
-              ctx.strokeStyle = obj.color || '#38bdf8'; ctx.lineWidth = obj.lineWidth || 0.5; ctx.stroke();
+              ctx.strokeStyle = obj.color || "#38bdf8";
+              ctx.lineWidth = obj.lineWidth || 0.5;
+              ctx.stroke();
             }
           });
         }
@@ -495,115 +674,32 @@ const PlotterAPI = {
     render();
 
     if (interactive) {
-      let isDragging = false; let lastMouse = { x: 0, y: 0 };
-      canvas.addEventListener('mousedown', (e) => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; canvas.style.cursor = 'grabbing'; });
-      canvas.addEventListener('mousemove', (e) => {
+      let isDragging = false;
+      let lastMouse = { x: 0, y: 0 };
+      canvas.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        lastMouse = { x: e.clientX, y: e.clientY };
+        canvas.style.cursor = "grabbing";
+      });
+      canvas.addEventListener("mousemove", (e) => {
         if (!isDragging) return;
-        yaw += (e.clientX - lastMouse.x) * 0.01; pitch += (e.clientY - lastMouse.y) * 0.01;
-        lastMouse = { x: e.clientX, y: e.clientY }; render(); 
+        yaw += (e.clientX - lastMouse.x) * 0.01;
+        pitch += (e.clientY - lastMouse.y) * 0.01;
+        lastMouse = { x: e.clientX, y: e.clientY };
+        render();
       });
-      canvas.addEventListener('mouseup', () => { isDragging = false; canvas.style.cursor = 'grab'; });
-      canvas.addEventListener('mouseleave', () => { isDragging = false; canvas.style.cursor = 'default'; });
-      canvas.style.cursor = 'grab';
+      canvas.addEventListener("mouseup", () => {
+        isDragging = false;
+        canvas.style.cursor = "grab";
+      });
+      canvas.addEventListener("mouseleave", () => {
+        isDragging = false;
+        canvas.style.cursor = "default";
+      });
+      canvas.style.cursor = "grab";
     }
 
     return canvas;
-  },
-
-  /**
-   * Renderizador 2D Avançado. Suporta múltiplas funções, pontos, hover dinâmico e grelha.
-   * @param {Array} datasets - Array de objetos {func, color, points}.
-   * @param {number[]} interval - Limites do eixo X [-10, 10].
-   * @param {Object} options - Configurações visuais.
-   * @returns {HTMLCanvasElement} Elemento Canvas renderizado.
-   */
-  multiLineGraph2D(datasets, interval = [-10, 10], options = {}) {
-    const { width = 600, height = 400, mesh = true, showAxisMarks = true, padding = 45, pointHover = false } = options;
-    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
-    const ctx = canvas.getContext('2d'); const [xMin, xMax] = interval;
-
-    let yMin = Infinity, yMax = -Infinity;
-    const processedData = datasets.map(dataset => {
-      const step = dataset.step || options.step || 0.1; const samples = [];
-      if (dataset.func) {
-        for (let x = xMin; x <= xMax; x += step) {
-          const y = dataset.func(x);
-          if (!isNaN(y) && isFinite(y)) { yMin = Math.min(yMin, y); yMax = Math.max(yMax, y); samples.push({ x, y }); }
-        }
-      }
-      if (dataset.points) dataset.points.forEach(p => { yMin = Math.min(yMin, p.y); yMax = Math.max(yMax, p.y); });
-      return { ...dataset, samples };
-    });
-
-    const yRange = yMax - yMin;
-    const adjYMin = yMin - (yRange * 0.1 || 1); const adjYMax = yMax + (yRange * 0.1 || 1);
-    const toPxX = (x) => padding + ((x - xMin) / (xMax - xMin)) * (width - 2 * padding);
-    const toPxY = (y) => (height - padding) - ((y - adjYMin) / (adjYMax - adjYMin)) * (height - 2 * padding);
-
-    const render = (hoverPoint = null) => {
-      ctx.clearRect(0, 0, width, height); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
-      if (mesh) {
-        ctx.strokeStyle = '#f1f5f9';
-        for (let i = 0; i <= 10; i++) {
-          const vx = xMin + i * ((xMax - xMin) / 10); ctx.beginPath(); ctx.moveTo(toPxX(vx), padding); ctx.lineTo(toPxX(vx), height - padding); ctx.stroke();
-          const vy = adjYMin + i * ((adjYMax - adjYMin) / 10); ctx.beginPath(); ctx.moveTo(padding, toPxY(vy)); ctx.lineTo(width - padding, toPxY(vy)); ctx.stroke();
-        }
-      }
-      const zY = Math.max(padding, Math.min(height - padding, toPxY(0))), zX = Math.max(padding, Math.min(width - padding, toPxX(0)));
-      ctx.strokeStyle = '#64748b'; ctx.beginPath(); ctx.moveTo(padding, zY); ctx.lineTo(width - padding, zY); ctx.moveTo(zX, padding); ctx.lineTo(zX, height - padding); ctx.stroke();
-      
-      if (showAxisMarks) {
-        ctx.fillStyle = '#64748b'; ctx.strokeStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.lineWidth = 1;
-        const xStep = (xMax - xMin) / 10;
-        for (let i = 0; i <= 10; i++) {
-          const val = xMin + i * xStep; const px = toPxX(val);
-          ctx.beginPath(); ctx.moveTo(px, zY - 4); ctx.lineTo(px, zY + 4); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillText(val.toFixed(1), px, zY + 15);
-        }
-        const yStep = (adjYMax - adjYMin) / 10;
-        for (let i = 0; i <= 10; i++) {
-          const val = adjYMin + i * yStep; const py = toPxY(val);
-          ctx.beginPath(); ctx.moveTo(zX - 4, py); ctx.lineTo(zX + 4, py); ctx.stroke(); ctx.textAlign = 'right'; ctx.fillText(val.toFixed(1), zX - 8, py + 3);
-        }
-      }
-
-      processedData.forEach(data => {
-        const color = data.color || '#3b82f6';
-        if (data.samples.length > 0) {
-          ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.beginPath();
-          data.samples.forEach((p, i) => i === 0 ? ctx.moveTo(toPxX(p.x), toPxY(p.y)) : ctx.lineTo(toPxX(p.x), toPxY(p.y))); ctx.stroke();
-        }
-        if (data.points) data.points.forEach(p => { ctx.fillStyle = data.pointColor || color; ctx.beginPath(); ctx.arc(toPxX(p.x), toPxY(p.y), 4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); });
-      });
-
-      if (hoverPoint) {
-        const px = toPxX(hoverPoint.x), py = toPxY(hoverPoint.y);
-        ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2; ctx.stroke();
-        const label = `(${hoverPoint.x.toFixed(2)}, ${hoverPoint.y.toFixed(2)})`; ctx.font = 'bold 11px sans-serif'; const textWidth = ctx.measureText(label).width;
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'; ctx.roundRect(px + 10, py - 30, textWidth + 15, 25, 5); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(label, px + 17, py - 13);
-      }
-    };
-
-    render();
-    if (pointHover) {
-      canvas.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect(); const mx = e.clientX - rect.left, my = e.clientY - rect.top; let found = null;
-        for (const data of processedData) {
-          if (data.points) { for (const p of data.points) { if (Math.sqrt((mx - toPxX(p.x))**2 + (my - toPxY(p.y))**2) < 8) { found = p; break; } } }
-          if (found) break;
-        }
-        canvas.style.cursor = found ? 'crosshair' : 'default'; render(found);
-      });
-      canvas.addEventListener('mouseleave', () => render(null));
-    }
-    return canvas;
-  },
-
-  /**
-   * Helper para desenhar uma única linha 2D rapidamente.
-   */
-  lineGraph2D(func, interval, options) { 
-    return this.multiLineGraph2D([{ func, ...options }], interval, options); 
   },
 
   // ==========================================
@@ -616,29 +712,45 @@ const PlotterAPI = {
    * @returns {Function} Função interpoladora f(x).
    */
   interpolationGN(points) {
-    const n = points.length; if (n < 2) return (x) => points[0]?.y || 0;
-    const h = points[1].x - points[0].x, y = points.map(p => p.y), diffs = [y];
+    const n = points.length;
+    if (n < 2) return (x) => points[0]?.y || 0;
+    const h = points[1].x - points[0].x,
+      y = points.map((p) => p.y),
+      diffs = [y];
     for (let j = 1; j < n; j++) {
-      const col = []; for (let i = 0; i < n - j; i++) col.push(diffs[j - 1][i + 1] - diffs[j - 1][i]); diffs.push(col);
+      const col = [];
+      for (let i = 0; i < n - j; i++)
+        col.push(diffs[j - 1][i + 1] - diffs[j - 1][i]);
+      diffs.push(col);
     }
-    const fact = (n) => n <= 1 ? 1 : n * fact(n - 1);
+    const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));
     return (x) => {
-      const u = (x - points[0].x) / h; let result = points[0].y, uProd = 1;
-      for (let i = 1; i < n; i++) { uProd *= (u - (i - 1)); result += (uProd * diffs[i][0]) / fact(i); }
+      const u = (x - points[0].x) / h;
+      let result = points[0].y,
+        uProd = 1;
+      for (let i = 1; i < n; i++) {
+        uProd *= u - (i - 1);
+        result += (uProd * diffs[i][0]) / fact(i);
+      }
       return result;
     };
   },
 
   /** Derivada numérica (Diferença Central). */
-  derivative(func, h = 0.001) { 
-    return (x) => (func(x + h) - func(x - h)) / (2 * h); 
+  derivative(func, h = 0.001) {
+    return (x) => (func(x + h) - func(x - h)) / (2 * h);
   },
 
   /** Integral numérica (Regra dos Trapézios Acumulada). */
   integral(func, precision = 0.05) {
     return (x) => {
-      let area = 0; const steps = Math.abs(x) / precision, sign = Math.sign(x);
-      for (let i = 0; i < steps; i++) { const t = i * precision * sign; area += (func(t) + func(t + precision * sign)) * 0.5 * precision * sign; }
+      let area = 0;
+      const steps = Math.abs(x) / precision,
+        sign = Math.sign(x);
+      for (let i = 0; i < steps; i++) {
+        const t = i * precision * sign;
+        area += (func(t) + func(t + precision * sign)) * 0.5 * precision * sign;
+      }
       return area;
     };
   },
@@ -650,17 +762,188 @@ const PlotterAPI = {
   conic2D(A, B, C, D, E, F) {
     return [
       (x) => {
-        const a = C, b = B * x + E, c = A * x * x + D * x + F;
+        const a = C,
+          b = B * x + E,
+          c = A * x * x + D * x + F;
         if (Math.abs(a) < 1e-7) return -c / b;
-        const delta = b * b - 4 * a * c; return delta >= 0 ? (-b + Math.sqrt(delta)) / (2 * a) : NaN;
+        const delta = b * b - 4 * a * c;
+        return delta >= 0 ? (-b + Math.sqrt(delta)) / (2 * a) : NaN;
       },
       (x) => {
-        const a = C, b = B * x + E, c = A * x * x + D * x + F;
+        const a = C,
+          b = B * x + E,
+          c = A * x * x + D * x + F;
         if (Math.abs(a) < 1e-7) return NaN;
-        const delta = b * b - 4 * a * c; return delta >= 0 ? (-b - Math.sqrt(delta)) / (2 * a) : NaN;
-      }
+        const delta = b * b - 4 * a * c;
+        return delta >= 0 ? (-b - Math.sqrt(delta)) / (2 * a) : NaN;
+      },
     ];
-  }
+  },
+
+  // ==========================================
+  // 6. ÁLGEBRA LINEAR E MATRIZES
+  // ==========================================
+
+  /**
+   * Cria um objeto de matriz genérica a partir de um array bidimensional.
+   * @param {number[][]} data - Array 2D contendo os valores da matriz (ex: [[1, 2], [3, 4]]).
+   * @returns {Object} Objeto do tipo 'matrix' contendo os dados e as suas dimensões.
+   */
+  matrix(data) {
+    if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
+      throw new Error(
+        "Formato inválido. A matriz deve ser instanciada como um array 2D, ex: [[1, 2], [3, 4]]",
+      );
+    }
+    return {
+      type: "matrix",
+      data: data,
+      rows: data.length,
+      cols: data[0].length,
+    };
+  },
+
+  /**
+   * Adiciona duas matrizes (A + B).
+   * @param {Object} m1 - Primeira matriz.
+   * @param {Object} m2 - Segunda matriz.
+   * @returns {Object} Nova matriz resultante.
+   */
+  matrixAdd(m1, m2) {
+    if (m1.rows !== m2.rows || m1.cols !== m2.cols) {
+      throw new Error("Dimensões incompatíveis para adição de matrizes.");
+    }
+    const result = m1.data.map((row, i) =>
+      row.map((val, j) => val + m2.data[i][j]),
+    );
+    return this.matrix(result);
+  },
+
+  /**
+   * Subtrai duas matrizes (A - B).
+   * @param {Object} m1 - Primeira matriz.
+   * @param {Object} m2 - Segunda matriz.
+   * @returns {Object} Nova matriz resultante.
+   */
+  matrixSub(m1, m2) {
+    if (m1.rows !== m2.rows || m1.cols !== m2.cols) {
+      throw new Error("Dimensões incompatíveis para subtração de matrizes.");
+    }
+    const result = m1.data.map((row, i) =>
+      row.map((val, j) => val - m2.data[i][j]),
+    );
+    return this.matrix(result);
+  },
+
+  /**
+   * Multiplica duas matrizes (A * B).
+   * @param {Object} m1 - Matriz A (m x n).
+   * @param {Object} m2 - Matriz B (n x p).
+   * @returns {Object} Nova matriz resultante (m x p).
+   */
+  matrixMult(m1, m2) {
+    if (m1.cols !== m2.rows) {
+      throw new Error(
+        "Dimensões incompatíveis para multiplicação. O número de colunas da 1ª deve igualar as linhas da 2ª.",
+      );
+    }
+    const result = Array(m1.rows)
+      .fill(0)
+      .map(() => Array(m2.cols).fill(0));
+    for (let i = 0; i < m1.rows; i++) {
+      for (let j = 0; j < m2.cols; j++) {
+        for (let k = 0; k < m1.cols; k++) {
+          result[i][j] += m1.data[i][k] * m2.data[k][j];
+        }
+      }
+    }
+    return this.matrix(result);
+  },
+
+  /**
+   * Calcula a Matriz Transposta (inverte linhas com colunas).
+   * @param {Object} m - Matriz original.
+   * @returns {Object} Nova matriz transposta.
+   */
+  matrixTranspose(m) {
+    const result = Array(m.cols)
+      .fill(0)
+      .map(() => Array(m.rows).fill(0));
+    for (let i = 0; i < m.rows; i++) {
+      for (let j = 0; j < m.cols; j++) {
+        result[j][i] = m.data[i][j];
+      }
+    }
+    return this.matrix(result);
+  },
+
+  /**
+   * Calcula o determinante de uma matriz quadrada (Teorema de Laplace).
+   * @param {Object} m - Matriz quadrada.
+   * @returns {number} Valor do determinante.
+   */
+  matrixDet(m) {
+    if (m.rows !== m.cols) {
+      throw new Error(
+        "A matriz deve ser quadrada para calcular o determinante.",
+      );
+    }
+
+    // Função auxiliar recursiva
+    const calcDet = (mat) => {
+      if (mat.length === 1) return mat[0][0];
+      if (mat.length === 2)
+        return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
+
+      let det = 0;
+      for (let i = 0; i < mat.length; i++) {
+        // Obter a matriz menor (removendo a 1ª linha e a coluna i)
+        const minor = mat.slice(1).map((row) => row.filter((_, j) => j !== i));
+        const cofactor = (i % 2 === 0 ? 1 : -1) * mat[0][i] * calcDet(minor);
+        det += cofactor;
+      }
+      return det;
+    };
+
+    return calcDet(m.data);
+  },
+
+  /**
+   * Calcula a Matriz Inversa utilizando a Matriz Adjunta.
+   * @param {Object} m - Matriz quadrada inversível.
+   * @returns {Object} Matriz inversa.
+   */
+  matrixInverse(m) {
+    const det = this.matrixDet(m);
+    if (Math.abs(det) < 1e-10) {
+      throw new Error(
+        "Matriz singular (determinante nulo ou muito próximo a zero). Não possui inversa.",
+      );
+    }
+
+    const n = m.rows;
+    if (n === 1) return this.matrix([[1 / m.data[0][0]]]);
+
+    const adjugate = Array(n)
+      .fill(0)
+      .map(() => Array(n).fill(0));
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        // Encontrar a matriz menor excluindo a linha 'i' e a coluna 'j'
+        const minorData = m.data
+          .filter((_, rowIdx) => rowIdx !== i)
+          .map((row) => row.filter((_, colIdx) => colIdx !== j));
+
+        // A matriz adjunta é a transposta da matriz dos cofatores
+        // Logo, colocamos o valor calculado na posição [j][i]
+        const minorDet = this.matrixDet(this.matrix(minorData));
+        adjugate[j][i] = (((i + j) % 2 === 0 ? 1 : -1) * minorDet) / det;
+      }
+    }
+
+    return this.matrix(adjugate);
+  },
 };
 
 export default PlotterAPI;
